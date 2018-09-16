@@ -12,7 +12,10 @@ defmodule Hangman do
       :world
 
   """
-  def hello do
-    :world
-  end
+  defdelegate new_game(), to: Game, as: :new_game
+
+  defdelegate tally(game), to: Game, as: :tally
+
+  defdelegate make_move(game, guess), to: Game, as: :make_move
+
 end
