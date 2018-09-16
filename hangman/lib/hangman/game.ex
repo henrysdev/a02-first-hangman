@@ -1,4 +1,4 @@
-defmodule Game do
+defmodule Hangman.Game do
 
   @doc """
   defstruct(
