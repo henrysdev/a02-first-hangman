@@ -50,7 +50,7 @@ defmodule Hangman.Game do
       {:bad_guess, turns - 1}
   end
 
-  defp det_game_state(_____, true, turns)
+  defp det_game_state(_, true, turns)
     when turns > 0 do
       {:already_used, turns}
   end
@@ -100,14 +100,13 @@ defmodule Hangman.Game do
       game_state: game_state,
       turns_left: turns_left,
       letters:    letters,
-      last_guess: guess
+      last_guess: guess,
       used_chars: used_chars,
       word_chars: game.word_chars,
       secret:     game.secret,
     }
 
     { updated_game, tally(updated_game) }
-
   end
 
 end
