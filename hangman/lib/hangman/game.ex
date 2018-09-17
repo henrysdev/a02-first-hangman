@@ -40,28 +40,15 @@ defmodule Hangman.Game do
   end
 
 
-  defp det_game_state(true,  false,  turns, false)
-    when turns > 0 do
-      {:good_guess, turns}
-  end
+  defp det_game_state(false, false, turns, _) when turns <= 1, do: {:lost, 0}
 
-  defp det_game_state(false, false,  turns, _)
-    when turns > 0 do
-      {:bad_guess, turns - 1}
-  end
+  defp det_game_state(false, false, turns, _) when turns > 1, do: {:bad_guess, turns-1}
 
-  defp det_game_state(_, true, turns, _)
-    when turns > 0 do
-      {:already_used, turns}
-  end
+  defp det_game_state(_, true, turns, _), do: {:already_used, turns}
 
-  defp det_game_state(true,  false, turns, true) do
-    {:won, turns}
-  end
+  defp det_game_state(true, false, turns, false), do: {:good_guess, turns}
 
-  defp det_game_state(false, false, 1, _) do
-    {:lost, 0}
-  end
+  defp det_game_state(true, false, turns, true), do:  {:won, turns}
 
   
   defp fill_in(letter, [ _h1 | t1 ], [ letter | t2 ]) do
@@ -74,6 +61,7 @@ defmodule Hangman.Game do
 
   defp fill_in(_letter, [], []), do: []
 
+
   defp update_letters(game_state, _guess, letters, _secret) 
     when game_state in [:bad_guess, :already_used, :lost] do
       letters
@@ -85,8 +73,8 @@ defmodule Hangman.Game do
   end
 
 
-  defp has_won?(a, b) do
-    MapSet.size(MapSet.intersection(a, b)) == MapSet.size(b)
+  defp has_won?(u_set, w_set) do
+    MapSet.size(MapSet.intersection(u_set, w_set)) == MapSet.size(w_set)
   end
 
 
@@ -96,11 +84,11 @@ defmodule Hangman.Game do
     used_chars = MapSet.new(game.used_chars)
       |> MapSet.put(guess)
     has_won?    = has_won?(used_chars, game.word_chars)
-    
+
     {game_state, turns_left} = det_game_state(in_word?, used_bfor?, game.turns_left, has_won?)
-
+    
     letters = update_letters(game_state, guess, game.letters, game.secret)
-
+    
     updated_game = %Hangman.Game{
       game_state: game_state,
       turns_left: turns_left,
