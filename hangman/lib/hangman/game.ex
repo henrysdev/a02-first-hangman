@@ -21,6 +21,7 @@ defmodule Hangman.Game do
     %Hangman.Game{
       secret:     secret,
       word_chars: word_chars,
+      used_chars: MapSet.new(),
       letters:    letters
     }
   end
@@ -39,62 +40,75 @@ defmodule Hangman.Game do
   end
 
 
+  defp det_game_state(true,  false,  turns)
+    when turns > 0 do
+      {:good_guess, turns}
+  end
+
+  defp det_game_state(false, false,  turns)
+    when turns > 0 do
+      {:bad_guess, turns - 1}
+  end
+
+  defp det_game_state(_____, true, turns)
+    when turns > 0 do
+      {:already_used, turns}
+  end
+
   defp det_game_state(true,  false, 1) do
     {:won, 0}
   end
+
   defp det_game_state(false, false, 1) do
     {:lost, 0}
   end
-  defp det_game_state(true,  false,  turns) when turns > 0 do
-    {:good_guess, turns - 1}
-  end
-  defp det_game_state(false, false,  turns) when turns > 0 do
-    {:bad_guess, turns - 1}
-  end
-  defp det_game_state(_____, true, turns) when turns > 0 do
-    {:already_used, turns}
-  end
 
   
-  defp fill_in(letter, [ h1 | t1 ], [ letter | t2 ]) do
+  defp fill_in(letter, [ _h1 | t1 ], [ letter | t2 ]) do
     [ letter | fill_in(letter, t1, t2) ]
   end
-  defp fill_in(letter, [ h1 | t1 ], [ h2 | t2 ]) do
+
+  defp fill_in(letter, [ h1 | t1 ], [ _h2 | t2 ]) do
     [ h1 | fill_in(letter, t1, t2) ]
   end
 
-  defp update_letters(game_state, letter, secret, letters) 
+  defp fill_in(_letter, [], []), do: []
+
+  defp update_letters(game_state, _guess, letters, _secret) 
     when game_state in [:bad_guess, :already_used, :lost] do
       letters
   end
 
-  defp update_letters(game_state, letter, secret, letters)
+  defp update_letters(game_state, guess, letters, secret)
     when game_state in [:good_guess, :won] do
-      fill_in(letter, secret, letters)
+      fill_in(guess, letters, secret)
   end
 
 
   # returns a tuple containing the updated game
   # state and a tally
   def make_move(game, guess) do
-    in_word = MapSet.member?(game.word_chars, guess)
-    old_let = MapSet.member?(game.used_chars, guess)
+    in_word?    = MapSet.member?(game.word_chars, guess)
+    used_bfor?  = MapSet.member?(game.used_chars, guess)
     
-    {game_state, turns_left} = det_game_state(in_word, old_let, game.turns_left)
-    used_chars = game.used_chars
-    MapSet.put(used_chars, guess)
+    { game_state, turns_left } = det_game_state(in_word?, used_bfor?, game.turns_left)
 
-    letters = update_letters(game_state, guess, game.secret, game.letters)
+    letters = update_letters(game_state, guess, game.letters, game.secret)
 
-    game = %Hangman.Game{
+    new_shit = MapSet.new(game.used_chars)
+      |> MapSet.put(guess)
+
+    updated_game = %Hangman.Game{
       game_state: game_state,
       turns_left: turns_left,
       letters:    letters,
-      used_chars: used_chars,
+      secret:     game.secret,
+      used_chars: new_shit,
+      word_chars: game.word_chars,
       last_guess: guess
     }
 
-    { game, tally(game) }
+    { updated_game, tally(updated_game) }
 
   end
 
