@@ -85,8 +85,6 @@ defmodule Hangman.Game do
   end
 
 
-  # returns a tuple containing the updated game
-  # state and a tally
   def make_move(game, guess) do
     in_word?    = MapSet.member?(game.word_chars, guess)
     used_bfor?  = MapSet.member?(game.used_chars, guess)
@@ -95,17 +93,17 @@ defmodule Hangman.Game do
 
     letters = update_letters(game_state, guess, game.letters, game.secret)
 
-    new_shit = MapSet.new(game.used_chars)
+    used_chars = MapSet.new(game.used_chars)
       |> MapSet.put(guess)
 
     updated_game = %Hangman.Game{
       game_state: game_state,
       turns_left: turns_left,
       letters:    letters,
-      secret:     game.secret,
-      used_chars: new_shit,
-      word_chars: game.word_chars,
       last_guess: guess
+      used_chars: used_chars,
+      word_chars: game.word_chars,
+      secret:     game.secret,
     }
 
     { updated_game, tally(updated_game) }
