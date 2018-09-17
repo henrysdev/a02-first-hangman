@@ -40,26 +40,26 @@ defmodule Hangman.Game do
   end
 
 
-  defp det_game_state(true,  false,  turns)
+  defp det_game_state(true,  false,  turns, false)
     when turns > 0 do
       {:good_guess, turns}
   end
 
-  defp det_game_state(false, false,  turns)
+  defp det_game_state(false, false,  turns, _)
     when turns > 0 do
       {:bad_guess, turns - 1}
   end
 
-  defp det_game_state(_, true, turns)
+  defp det_game_state(_, true, turns, _)
     when turns > 0 do
       {:already_used, turns}
   end
 
-  defp det_game_state(true,  false, 1) do
-    {:won, 0}
+  defp det_game_state(true,  false, turns, true) do
+    {:won, turns}
   end
 
-  defp det_game_state(false, false, 1) do
+  defp det_game_state(false, false, 1, _) do
     {:lost, 0}
   end
 
@@ -85,16 +85,21 @@ defmodule Hangman.Game do
   end
 
 
+  defp has_won?(a, b) do
+    MapSet.size(MapSet.intersection(a, b)) == MapSet.size(b)
+  end
+
+
   def make_move(game, guess) do
     in_word?    = MapSet.member?(game.word_chars, guess)
     used_bfor?  = MapSet.member?(game.used_chars, guess)
-    
-    { game_state, turns_left } = det_game_state(in_word?, used_bfor?, game.turns_left)
-
-    letters = update_letters(game_state, guess, game.letters, game.secret)
-
     used_chars = MapSet.new(game.used_chars)
       |> MapSet.put(guess)
+    has_won?    = has_won?(used_chars, game.word_chars)
+    
+    {game_state, turns_left} = det_game_state(in_word?, used_bfor?, game.turns_left, has_won?)
+
+    letters = update_letters(game_state, guess, game.letters, game.secret)
 
     updated_game = %Hangman.Game{
       game_state: game_state,
@@ -106,7 +111,7 @@ defmodule Hangman.Game do
       secret:     game.secret,
     }
 
-    { updated_game, tally(updated_game) }
+    {updated_game, tally(updated_game)}
   end
 
 end
