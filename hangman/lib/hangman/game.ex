@@ -37,7 +37,7 @@ defmodule Hangman.Game do
   defp next_state(false, false, false, turns), do: {:bad_guess, turns-1}
   
   defp fill_in(guess, [_h1 | t1], [guess | t2]), do: [guess | fill_in(guess, t1, t2)]
-  defp fill_in(guess, [h1 | t1], [ _h2 | t2]),   do: [h1 | fill_in(guess, t1, t2)]
+  defp fill_in(guess, [h1 | t1], [_h2 | t2]),    do: [h1 | fill_in(guess, t1, t2)]
   defp fill_in(_guess, [], []), do: []
 
   def make_move(%Hangman.Game{game_state: :won} = game, _),  do: {game, tally(game)}
