@@ -29,7 +29,7 @@ defmodule Hangman.Game do
     }
   end
 
-  # conditions    won?   old?   good?  turns_left
+  #               won?   old?   good?  turns_left
   defp next_state(true,  false, true,  turns), do: {:won, turns}
   defp next_state(_____, true,  ____,  turns), do: {:already_used, turns}
   defp next_state(false, false, true,  turns), do: {:good_guess, turns}
