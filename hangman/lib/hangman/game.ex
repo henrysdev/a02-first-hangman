@@ -11,15 +11,11 @@ defmodule Hangman.Game do
   )
 
   def new_game() do
-    secret  = Dictionary.random_word()
-      |> String.codepoints
-    word_chars = MapSet.new(secret)
-    letters = String.duplicate("_", length(secret))
-      |> String.codepoints
+    secret  = Dictionary.random_word() |> String.codepoints
     %Hangman.Game{
       secret:     secret,
-      word_chars: word_chars,
-      letters:    letters
+      word_chars: MapSet.new(secret),
+      letters:    String.duplicate("_", length(secret)) |> String.codepoints
     }
   end
 
@@ -28,32 +24,31 @@ defmodule Hangman.Game do
       game_state: game.game_state,
       turns_left: game.turns_left,
       letters:    game.letters,
-      used:       MapSet.to_list(game.used_chars),
+      used:       game.used_chars |> MapSet.to_list(),
       last_guess: game.last_guess
     }
   end
 
-  defp next_state(false, false, 1, false),     do: {:lost, 0}
-  defp next_state(false, false, turns, false), do: {:bad_guess, turns-1}
-  defp next_state(____, true, turns, false),   do: {:already_used, turns}
-  defp next_state(true, false, turns, false),  do: {:good_guess, turns}
-  defp next_state(true, false, turns, true),   do: {:won, turns}
+  # conditions    won?   old?   good?  turns_left
+  defp next_state(true,  false, true,  turns), do: {:won, turns}
+  defp next_state(_____, true,  ____,  turns), do: {:already_used, turns}
+  defp next_state(false, false, true,  turns), do: {:good_guess, turns}
+  defp next_state(false, false, false, 1),     do: {:lost, 0}
+  defp next_state(false, false, false, turns), do: {:bad_guess, turns-1}
   
   defp fill_in(guess, [_h1 | t1], [guess | t2]), do: [guess | fill_in(guess, t1, t2)]
-  defp fill_in(guess, [h1 | t1], [ _h2 | t2]), do: [h1 | fill_in(guess, t1, t2)]
+  defp fill_in(guess, [h1 | t1], [ _h2 | t2]),   do: [h1 | fill_in(guess, t1, t2)]
   defp fill_in(_guess, [], []), do: []
 
   def make_move(%Hangman.Game{game_state: :won} = game, _),  do: {game, tally(game)}
   def make_move(%Hangman.Game{game_state: :lost} = game, _), do: {game, tally(game)}
   def make_move(game, guess) do
-    in_word?    = MapSet.member?(game.word_chars, guess)
-    used_bfor?  = MapSet.member?(game.used_chars, guess)
-
-    used_chars  = MapSet.new(game.used_chars) |> MapSet.put(guess)
-    has_won?    = MapSet.intersection(used_chars, game.word_chars) == game.word_chars
-
-    {game_state, turns_left} = next_state(in_word?, used_bfor?, game.turns_left, has_won?)
+    good? = MapSet.member?(game.word_chars, guess)
+    old? = MapSet.member?(game.used_chars, guess)
+    used_chars = MapSet.new(game.used_chars) |> MapSet.put(guess)
+    won?  = MapSet.intersection(used_chars, game.word_chars) == game.word_chars
     
+    {game_state, turns_left} = next_state(won?, old?, good?, game.turns_left)
     letters = fill_in(guess, game.letters, game.secret)
     
     updated_game = %Hangman.Game{
@@ -65,7 +60,6 @@ defmodule Hangman.Game do
       word_chars: game.word_chars,
       secret:     game.secret,
     }
-
     {updated_game, tally(updated_game)}
   end
 
